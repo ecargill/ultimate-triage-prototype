@@ -58,6 +58,7 @@
             const [selectedDate, setSelectedDate] = useState('June 10');
             const [deliveryMethod, setDeliveryMethod] = useState('');
             const [contactInfo, setContactInfo] = useState('');
+            const [viewMode, setViewMode] = useState('map'); // 'map' or 'list'
 
             const dates = ['June 10', 'June 11', 'June 12', 'June 13', 'June 14', 'June 15', 'June 16'];
             
@@ -154,7 +155,34 @@
                         </div>
                     </div>
 
-                    <div className="flex-1 relative bg-gray-200">
+                    {/* Toggle Button */}
+                    <div className="bg-white px-4 py-2 border-b flex justify-center gap-2">
+                        <button
+                            onClick={() => setViewMode('map')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                                viewMode === 'map'
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 text-gray-600'
+                            }`}
+                        >
+                            Map View
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                                viewMode === 'list'
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 text-gray-600'
+                            }`}
+                        >
+                            List View
+                        </button>
+                    </div>
+
+                    {/* Map View */}
+                    <div className={`flex-1 relative bg-gray-200 transition-all duration-500 ease-in-out ${
+                        viewMode === 'map' ? 'opacity-100' : 'opacity-0 pointer-events-none absolute inset-0'
+                    }`}>
                         <div className="absolute inset-0 opacity-20">
                             <div className="absolute top-1/4 left-1/4 w-1/2 h-1 bg-gray-400"></div>
                             <div className="absolute top-1/2 left-1/4 w-1/2 h-1 bg-gray-400"></div>
@@ -178,6 +206,39 @@
                                 {venue.showCount}
                             </button>
                         ))}
+                    </div>
+
+                    {/* List View */}
+                    <div className={`flex-1 overflow-y-auto bg-gray-100 p-4 transition-all duration-500 ease-in-out ${
+                        viewMode === 'list' ? 'opacity-100' : 'opacity-0 pointer-events-none absolute inset-0'
+                    }`}>
+                        <div className="space-y-4">
+                            {shows.map(show => (
+                                <button
+                                    key={show.id}
+                                    onClick={() => {
+                                        setSelectedShow(show.id);
+                                        setScreen('detail');
+                                    }}
+                                    className="w-full bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow text-left"
+                                >
+                                    <div 
+                                        className="h-32 flex items-center justify-center text-white font-bold text-xl p-4"
+                                        style={{ background: show.image }}
+                                    >
+                                        {show.title}
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-1">{show.title}</h3>
+                                        <p className="text-sm text-gray-600 mb-2">{show.venue}</p>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">{show.date} • {show.time}</span>
+                                            <span className="text-xl font-bold text-purple-600">${show.price}</span>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="bg-white border-t border-gray-300 p-4">
