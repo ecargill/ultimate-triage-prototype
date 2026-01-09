@@ -8,6 +8,44 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Global transitions for all screens */
+        .screen-transition {
+            animation: fadeIn 500ms ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Slide up animation for detail view */
+        .slide-up {
+            animation: slideUp 500ms ease-in-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Smooth scrolling */
+        * {
+            scroll-behavior: smooth;
+        }
+    </style>
 </head>
 <body>
     <div id="root"></div>
@@ -127,7 +165,7 @@
             }, [screen]);
 
             const renderSplash = () => (
-                <div className="h-full flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600">
+                <div className="h-full flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 screen-transition">
                     <div className="text-center">
                         <h1 className="text-5xl font-bold text-white mb-4">Ultimate Triage</h1>
                         <div className="w-16 h-1 bg-white mx-auto animate-pulse"></div>
@@ -136,7 +174,7 @@
             );
 
             const renderMap = () => (
-                <div className="h-full flex flex-col bg-gray-100">
+                <div className="h-full flex flex-col bg-gray-100 screen-transition">
                     {/* Date Filter */}
                     <div className="bg-white p-3 shadow-sm overflow-x-auto">
                         <div className="flex gap-2 min-w-max">
@@ -279,7 +317,7 @@
                 if (!show) return null;
 
                 return (
-                    <div className="h-full flex flex-col bg-white">
+                    <div className="h-full flex flex-col bg-white slide-up">
                         <div className="flex justify-between items-center p-4 border-b">
                             <h2 className="text-xl font-bold">Show Details</h2>
                             <button 
@@ -363,7 +401,7 @@
                 if (!show) return null;
 
                 return (
-                    <div className="h-full flex flex-col bg-white">
+                    <div className="h-full flex flex-col bg-white screen-transition">
                         <div className="flex justify-between items-center p-4 border-b">
                             <h2 className="text-xl font-bold">Checkout</h2>
                             <button 
@@ -480,7 +518,7 @@
                 if (!show) return null;
 
                 return (
-                    <div className="h-full flex flex-col bg-white">
+                    <div className="h-full flex flex-col bg-white screen-transition">
                         <div className="flex-1 overflow-y-auto p-6">
                             <div className="text-center mb-8">
                                 <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
