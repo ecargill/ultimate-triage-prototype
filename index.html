@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Triage - Theater Ticket App</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Global transitions for all screens */
+        .screen-transition {
+            animation: fadeIn 500ms ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Slide up animation for detail view */
+        .slide-up {
+            animation: slideUp 500ms ease-in-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Smooth scrolling */
+        * {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const MapPin = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+        );
+
+        const Plus = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
+        const Minus = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
+        const X = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
+
+        const Calendar = ({ size = 24, className = "" }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        );
+
+        const UltimateTriageWireframes = () => {
+            const [screen, setScreen] = useState('splash');
+            const [selectedShow, setSelectedShow] = useState(null);
+            const [ticketCount, setTicketCount] = useState(1);
+            const [selectedDate, setSelectedDate] = useState('June 10');
+            const [deliveryMethod, setDeliveryMethod] = useState('');
+            const [contactInfo, setContactInfo] = useState('');
+            const [viewMode, setViewMode] = useState('map'); // 'map' or 'list'
+
+            const dates = ['June 10', 'June 11', 'June 12', 'June 13', 'June 14', 'June 15', 'June 16'];
+            
+            const venues = [
+                { id: 1, name: 'ACT Theatre', lat: 47.6152, lng: -122.3421, showCount: 3, x: 45, y: 40 },
+                { id: 2, name: 'The Moore Theatre', lat: 47.6213, lng: -122.3372, showCount: 2, x: 60, y: 35 },
+                { id: 3, name: 'Taproot Theatre', lat: 47.6097, lng: -122.3331, showCount: 1, x: 35, y: 55 },
+                { id: 4, name: 'Seattle Rep', lat: 47.6205, lng: -122.3493, showCount: 2, x: 55, y: 48 }
+            ];
+
+            const shows = [
+                { 
+                    id: 1, 
+                    title: 'Hamilton',
+                    venue: 'ACT Theatre',
+                    address: '700 Union St, Seattle, WA 98101',
+                    date: 'June 10, 2024',
+                    time: '7:30 PM',
+                    price: 45,
+                    description: 'The story of America\'s Founding Father Alexander Hamilton, an immigrant from the West Indies who became George Washington\'s right-hand man.',
+                    image: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                },
+                { 
+                    id: 2, 
+                    title: 'The Book of Mormon',
+                    venue: 'The Moore Theatre',
+                    address: '1932 2nd Ave, Seattle, WA 98101',
+                    date: 'June 10, 2024',
+                    time: '8:00 PM',
+                    price: 38,
+                    description: 'A satirical musical comedy about two missionaries sent to Uganda. Winner of 9 Tony Awards including Best Musical.',
+                    image: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+                },
+                { 
+                    id: 3, 
+                    title: 'A Raisin in the Sun',
+                    venue: 'Seattle Rep',
+                    address: '155 Mercer St, Seattle, WA 98109',
+                    date: 'June 11, 2024',
+                    time: '7:00 PM',
+                    price: 32,
+                    description: 'Lorraine Hansberry\'s groundbreaking drama about a Black family\'s experiences in south Chicago as they attempt to improve their lives.',
+                    image: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+                },
+                { 
+                    id: 4, 
+                    title: 'Into the Woods',
+                    venue: 'Taproot Theatre',
+                    address: '204 N 85th St, Seattle, WA 98103',
+                    date: 'June 12, 2024',
+                    time: '7:30 PM',
+                    price: 28,
+                    description: 'Stephen Sondheim\'s beloved musical intertwines the plots of several Brothers Grimm fairy tales and follows them further.',
+                    image: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)'
+                }
+            ];
+
+            const ticketPrice = selectedShow ? shows.find(s => s.id === selectedShow).price : 0;
+            const totalCost = ticketPrice * ticketCount;
+
+            useEffect(() => {
+                if (screen === 'splash') {
+                    const timer = setTimeout(() => setScreen('map'), 2000);
+                    return () => clearTimeout(timer);
+                }
+            }, [screen]);
+
+            const renderSplash = () => (
+                <div className="h-full flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-600 screen-transition">
+                    <div className="text-center">
+                        <h1 className="text-5xl font-bold text-white mb-4">Ultimate Triage</h1>
+                        <div className="w-16 h-1 bg-white mx-auto animate-pulse"></div>
+                    </div>
+                </div>
+            );
+
+            const renderMap = () => (
+                <div className="h-full flex flex-col bg-gray-100 screen-transition">
+                    {/* Date Filter */}
+                    <div className="bg-white p-3 shadow-sm overflow-x-auto">
+                        <div className="flex gap-2 min-w-max">
+                            {dates.map(date => (
+                                <button
+                                    key={date}
+                                    onClick={() => setSelectedDate(date)}
+                                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                                        selectedDate === date
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-gray-200 text-gray-700'
+                                    }`}
+                                >
+                                    {date}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Toggle Button */}
+                    <div className="bg-white px-4 py-2 border-b flex justify-center gap-2">
+                        <button
+                            onClick={() => setViewMode('map')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                                viewMode === 'map'
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 text-gray-600'
+                            }`}
+                        >
+                            Map View
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+                                viewMode === 'list'
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 text-gray-600'
+                            }`}
+                        >
+                            List View
+                        </button>
+                    </div>
+
+                    {/* Map View */}
+                    <div className={`relative bg-gray-200 transition-all duration-500 ease-in-out ${
+                        viewMode === 'map' ? 'flex-1' : 'h-0 overflow-hidden'
+                    }`}>
+                        <div className="absolute inset-0 opacity-20">
+                            <div className="absolute top-1/4 left-1/4 w-1/2 h-1 bg-gray-400"></div>
+                            <div className="absolute top-1/2 left-1/4 w-1/2 h-1 bg-gray-400"></div>
+                            <div className="absolute top-1/4 left-1/3 w-1 h-1/2 bg-gray-400"></div>
+                            <div className="absolute top-1/4 left-2/3 w-1 h-1/2 bg-gray-400"></div>
+                        </div>
+
+                        {venues.map(venue => (
+                            <button
+                                key={venue.id}
+                                onClick={() => {
+                                    const venueShow = shows.find(s => s.venue === venue.name);
+                                    if (venueShow) {
+                                        setSelectedShow(venueShow.id);
+                                        setScreen('detail');
+                                    }
+                                }}
+                                className="absolute w-12 h-12 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center font-bold text-lg hover:bg-purple-700 transition-colors"
+                                style={{ left: `${venue.x}%`, top: `${venue.y}%`, transform: 'translate(-50%, -50%)' }}
+                            >
+                                {venue.showCount}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* List View - Full Screen */}
+                    <div className={`overflow-y-auto bg-gray-100 transition-all duration-500 ease-in-out ${
+                        viewMode === 'list' ? 'flex-1 p-4' : 'h-0 overflow-hidden p-0'
+                    }`}>
+                        <div className="space-y-4">
+                            {shows.map(show => (
+                                <button
+                                    key={show.id}
+                                    onClick={() => {
+                                        setSelectedShow(show.id);
+                                        setScreen('detail');
+                                    }}
+                                    className="w-full bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow text-left"
+                                >
+                                    <div 
+                                        className="h-32 flex items-center justify-center text-white font-bold text-xl p-4"
+                                        style={{ background: show.image }}
+                                    >
+                                        {show.title}
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-1">{show.title}</h3>
+                                        <p className="text-sm text-gray-600 mb-2">{show.venue}</p>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600">{show.date} • {show.time}</span>
+                                            <span className="text-xl font-bold text-purple-600">${show.price}</span>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Show Carousel - Only visible in Map View */}
+                    <div className={`bg-white border-t border-gray-300 transition-all duration-500 ease-in-out ${
+                        viewMode === 'map' ? 'p-4' : 'h-0 overflow-hidden p-0'
+                    }`}>
+                        <div className="flex gap-4 overflow-x-auto pb-2">
+                            {shows.map(show => (
+                                <button
+                                    key={show.id}
+                                    onClick={() => {
+                                        setSelectedShow(show.id);
+                                        setScreen('detail');
+                                    }}
+                                    className="flex-shrink-0 w-64 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+                                >
+                                    <div 
+                                        className="h-40 flex items-center justify-center text-white font-bold text-xl p-4 text-center"
+                                        style={{ background: show.image }}
+                                    >
+                                        {show.title}
+                                    </div>
+                                    <div className="bg-white p-3">
+                                        <p className="font-semibold text-gray-800">{show.venue}</p>
+                                        <p className="text-sm text-gray-600">{show.date} • {show.time}</p>
+                                        <p className="text-lg font-bold text-purple-600 mt-1">${show.price}</p>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const renderDetail = () => {
+                const show = shows.find(s => s.id === selectedShow);
+                if (!show) return null;
+
+                return (
+                    <div className="h-full flex flex-col bg-white slide-up">
+                        <div className="flex justify-between items-center p-4 border-b">
+                            <h2 className="text-xl font-bold">Show Details</h2>
+                            <button 
+                                onClick={() => {
+                                    setScreen('map');
+                                    setTicketCount(1);
+                                }}
+                                className="p-2 hover:bg-gray-100 rounded-full"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto">
+                            <div 
+                                className="h-64 flex items-center justify-center text-white font-bold text-3xl"
+                                style={{ background: show.image }}
+                            >
+                                {show.title}
+                            </div>
+                            
+                            <div className="p-6">
+                                <h1 className="text-3xl font-bold mb-4">{show.title}</h1>
+                                <p className="text-gray-600 mb-6 leading-relaxed">{show.description}</p>
+                                
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex items-start">
+                                        <MapPin className="text-purple-600 mr-2 flex-shrink-0 mt-1" size={20} />
+                                        <div>
+                                            <p className="font-semibold">{show.venue}</p>
+                                            <p className="text-gray-600 text-sm">{show.address}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <Calendar className="text-purple-600 mr-2" size={20} />
+                                        <p className="font-semibold">{show.date} at {show.time}</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                    <p className="font-semibold mb-3">Select Number of Tickets</p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <button
+                                                onClick={() => setTicketCount(Math.max(1, ticketCount - 1))}
+                                                className="w-10 h-10 bg-white border-2 border-purple-600 text-purple-600 rounded-full flex items-center justify-center hover:bg-purple-50"
+                                            >
+                                                <Minus size={20} />
+                                            </button>
+                                            <span className="text-2xl font-bold w-12 text-center">{ticketCount}</span>
+                                            <button
+                                                onClick={() => setTicketCount(ticketCount + 1)}
+                                                className="w-10 h-10 bg-white border-2 border-purple-600 text-purple-600 rounded-full flex items-center justify-center hover:bg-purple-50"
+                                            >
+                                                <Plus size={20} />
+                                            </button>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm text-gray-600">${show.price} per ticket</p>
+                                            <p className="text-2xl font-bold text-purple-600">${totalCost}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-t bg-white">
+                            <button
+                                onClick={() => setScreen('checkout')}
+                                className="w-full bg-purple-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors"
+                            >
+                                Buy Tickets - ${totalCost}
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderCheckout = () => {
+                const show = shows.find(s => s.id === selectedShow);
+                if (!show) return null;
+
+                return (
+                    <div className="h-full flex flex-col bg-white screen-transition">
+                        <div className="flex justify-between items-center p-4 border-b">
+                            <h2 className="text-xl font-bold">Checkout</h2>
+                            <button 
+                                onClick={() => setScreen('detail')}
+                                className="p-2 hover:bg-gray-100 rounded-full"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                                <h3 className="font-bold mb-3">Order Summary</h3>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <span>{show.title}</span>
+                                        <span className="font-semibold">${show.price}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-gray-600">
+                                        <span>Quantity</span>
+                                        <span>x{ticketCount}</span>
+                                    </div>
+                                    <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                                        <span>Total</span>
+                                        <span className="text-purple-600">${totalCost}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <h3 className="font-bold mb-3">Ticket Delivery</h3>
+                                <div className="space-y-3">
+                                    <button
+                                        onClick={() => setDeliveryMethod('willcall')}
+                                        className={`w-full p-4 border-2 rounded-lg text-left ${
+                                            deliveryMethod === 'willcall' 
+                                                ? 'border-purple-600 bg-purple-50' 
+                                                : 'border-gray-300'
+                                        }`}
+                                    >
+                                        <p className="font-semibold">Will Call</p>
+                                        <p className="text-sm text-gray-600">Pick up at venue box office</p>
+                                    </button>
+                                    <button
+                                        onClick={() => setDeliveryMethod('digital')}
+                                        className={`w-full p-4 border-2 rounded-lg text-left ${
+                                            deliveryMethod === 'digital' 
+                                                ? 'border-purple-600 bg-purple-50' 
+                                                : 'border-gray-300'
+                                        }`}
+                                    >
+                                        <p className="font-semibold">Digital Delivery</p>
+                                        <p className="text-sm text-gray-600">Receive via SMS or Email</p>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {deliveryMethod === 'digital' && (
+                                <div className="mb-6">
+                                    <label className="block font-bold mb-2">Contact Information</label>
+                                    <input
+                                        type="text"
+                                        value={contactInfo}
+                                        onChange={(e) => setContactInfo(e.target.value)}
+                                        placeholder="Phone number or email"
+                                        className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-600 focus:outline-none"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="mb-6">
+                                <h3 className="font-bold mb-3">Payment Information</h3>
+                                <div className="space-y-3">
+                                    <input
+                                        type="text"
+                                        placeholder="Card Number"
+                                        className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-600 focus:outline-none"
+                                    />
+                                    <div className="flex gap-3">
+                                        <input
+                                            type="text"
+                                            placeholder="MM/YY"
+                                            className="w-1/2 p-3 border-2 border-gray-300 rounded-lg focus:border-purple-600 focus:outline-none"
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="CVV"
+                                            className="w-1/2 p-3 border-2 border-gray-300 rounded-lg focus:border-purple-600 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-t bg-white">
+                            <button
+                                onClick={() => setScreen('confirmation')}
+                                disabled={!deliveryMethod}
+                                className={`w-full py-4 rounded-lg font-bold text-lg transition-colors ${
+                                    deliveryMethod
+                                        ? 'bg-purple-600 text-white hover:bg-purple-700'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                            >
+                                Complete Purchase - ${totalCost}
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderConfirmation = () => {
+                const show = shows.find(s => s.id === selectedShow);
+                if (!show) return null;
+
+                return (
+                    <div className="h-full flex flex-col bg-white screen-transition">
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <div className="text-center mb-8">
+                                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <h2 className="text-3xl font-bold mb-2">Purchase Complete!</h2>
+                                <p className="text-gray-600">Your tickets are confirmed</p>
+                            </div>
+
+                            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                                <h3 className="font-bold mb-4">Ticket Details</h3>
+                                <div className="space-y-3">
+                                    <div>
+                                        <p className="text-sm text-gray-600">Show</p>
+                                        <p className="font-semibold">{show.title}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Venue</p>
+                                        <p className="font-semibold">{show.venue}</p>
+                                        <p className="text-sm">{show.address}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Date & Time</p>
+                                        <p className="font-semibold">{show.date} at {show.time}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Tickets</p>
+                                        <p className="font-semibold">{ticketCount} x ${show.price} = ${totalCost}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Delivery</p>
+                                        <p className="font-semibold">
+                                            {deliveryMethod === 'willcall' ? 'Will Call' : `Digital - ${contactInfo}`}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {deliveryMethod === 'digital' && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                    <p className="text-sm text-blue-800">
+                                        Your tickets have been sent to {contactInfo}
+                                    </p>
+                                </div>
+                            )}
+
+                            <div className="border-2 border-purple-200 rounded-lg p-6 mb-6">
+                                <h3 className="font-bold mb-2">Create an Account?</h3>
+                                <p className="text-sm text-gray-600 mb-4">
+                                    Save your purchase history and get faster checkout next time
+                                </p>
+                                <button className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors">
+                                    Create Account
+                                </button>
+                                <button className="w-full text-purple-600 py-3 font-semibold hover:underline">
+                                    Maybe Later
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-t bg-white">
+                            <button
+                                onClick={() => {
+                                    setScreen('map');
+                                    setSelectedShow(null);
+                                    setTicketCount(1);
+                                    setDeliveryMethod('');
+                                    setContactInfo('');
+                                }}
+                                className="w-full bg-gray-100 text-gray-800 py-4 rounded-lg font-bold text-lg hover:bg-gray-200 transition-colors"
+                            >
+                                Back to Home
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="w-full h-screen bg-gray-100 flex items-center justify-center p-4">
+                    <div className="w-full max-w-md h-full max-h-[800px] bg-white rounded-3xl shadow-2xl overflow-hidden">
+                        {screen === 'splash' && renderSplash()}
+                        {screen === 'map' && renderMap()}
+                        {screen === 'detail' && renderDetail()}
+                        {screen === 'checkout' && renderCheckout()}
+                        {screen === 'confirmation' && renderConfirmation()}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<UltimateTriageWireframes />, document.getElementById('root'));
+    </script>
+</body>
+</html>
